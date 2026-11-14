@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marktzins zum Stichtag</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column — form on top, result card with big rate, then trend chart and source note */
+:root {
+  --bg: #f5f7f7;
+  --surface: #ffffff;
+  --fg: #16232a;
+  --muted: #5b6b72;
+  --line: #d9e1e3;
+  --accent: #0d5c63;
+  --accent-soft: #e2eff0;
+  --warn: #8a5a00;
+  --warn-soft: #fbf1dc;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1719; --surface: #162125; --fg: #e4ecee; --muted: #93a5ab; --line: #2a3a3f;
+    --accent: #5fc1c9; --accent-soft: #1b3236; --warn: #f0c060; --warn-soft: #332a14; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1719; --surface: #162125; --fg: #e4ecee; --muted: #93a5ab; --line: #2a3a3f;
+  --accent: #5fc1c9; --accent-soft: #1b3236; --warn: #f0c060; --warn-soft: #332a14; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--sans);
+  padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 760px; margin: 0 auto; display: grid; gap: 24px; }
+header h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 6px; font-weight: 600; text-wrap: balance; letter-spacing: -0.01em; }
+header p { margin: 0; color: var(--muted); max-width: 62ch; }
+.eyebrow { font: 500 0.72rem var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 8px; }
+
+form { display: grid; grid-template-columns: 1fr 190px auto; gap: 12px; align-items: end; }
+@media (max-width: 640px) { form { grid-template-columns: 1fr; } }
+label { display: grid; gap: 4px; font-size: 0.8rem; font-weight: 500; color: var(--muted); min-width: 0; }
+select, input, button { font: inherit; color: var(--fg); }
+select, input[type="date"] {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); min-width: 0;
+}
+button {
+  padding: 10px 18px; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent); color: var(--surface);
+  font-weight: 600; cursor: pointer;
+}
+button.ghost { background: transparent; color: var(--accent); font-weight: 500; padding: 6px 12px; font-size: 0.85rem; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.result { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 24px; display: grid; gap: 18px; }
+.headline { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: baseline; }
+.rate { font: 500 3.2rem/1 var(--mono); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.rate small { font-size: 1.1rem; color: var(--muted); margin-left: 4px; }
+.meta { display: grid; gap: 2px; min-width: 0; }
+.meta strong { font-weight: 600; }
+.meta span { color: var(--muted); font-size: 0.9rem; }
+.pill { display: inline-block; font: 500 0.72rem var(--mono); padding: 2px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.notice { background: var(--warn-soft); color: var(--warn); border-radius: 6px; padding: 10px 12px; font-size: 0.88rem; }
+.error { color: var(--warn); }
+
+.neighbours { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.neighbours div { background: var(--surface); padding: 8px 10px; display: grid; gap: 2px; }
+.neighbours div.on { background: var(--accent-soft); }
+.neighbours .m { font: 0.72rem var(--mono); color: var(--muted); }
+.neighbours .v { font: 500 0.95rem var(--mono); font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .neighbours { grid-template-columns: repeat(3, 1fr); } .neighbours div:nth-child(1), .neighbours div:nth-child(5) { display: none; } }
+
+.chart-wrap { overflow-x: auto; }
+svg text { fill: var(--muted); font: 11px var(--mono); }
+.cite { display: grid; gap: 8px; }
+.cite-text { font-size: 0.88rem; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; user-select: all; }
+.cite-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; }
+a { color: var(--accent); }
+.source { font-size: 0.82rem; color: var(--muted); max-width: 70ch; display: grid; gap: 6px; }
+.source p { margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">MFI-Zinsstatistik · Deutsche Bundesbank</div>
+    <h1>Marktüblicher Zinssatz zum Stichtag</h1>
+    <p>Kreditart und Stichtag wählen. Angezeigt wird der durchschnittliche Effektivzinssatz deutscher Banken im Neugeschäft für den Monat, in den der Stichtag fällt.</p>
+  </header>
+
+  <form id="f">
+    <label for="type">Kreditart
+      <select id="type"></select>
+    </label>
+    <label for="date">Stichtag
+      <input type="date" id="date" min="2003-01-01" required>
+    </label>
+    <button type="submit">Zinssatz anzeigen</button>
+  </form>
+
+  <section class="result" id="result" aria-live="polite">
+    <p class="meta"><span>Lade Daten der Bundesbank …</span></p>
+  </section>
+
+  <footer class="source">
+    <p><strong>Quelle:</strong> Deutsche Bundesbank, MFI-Zinsstatistik (Neugeschäft), abgerufen live über die <a href="https://api.statistiken.bundesbank.de" target="_blank" rel="noopener">Statistik-API</a>. Werte sind volumengewichtete Durchschnitte aller im Berichtsmonat neu abgeschlossenen Kredite, als Effektivzinssatz (AVJ/NDER) ohne sonstige Kosten wie Gebühren oder Versicherungen.</p>
+    <p>Die Bundesbank veröffentlicht die Zahlen etwa fünf Wochen nach Monatsende. Der jüngste Monat ist vorläufig und kann sich noch ändern.</p>
+  </footer>
+</main>
+
+<script>
+const API = "https://api.statistiken.bundesbank.de/rest/data/BBIM1/";
+const BBK_LINK = id => `https://www.bundesbank.de/dynamic/action/de/statistiken/zeitreihen-datenbanken/zeitreihen-datenbank/759784/759784?tsId=${id}`;
+
+// [group, label, series key (after BBIM1.M.DE.B.), SUD code]
+const TYPES = [
+  ["Private Haushalte · Wohnungsbaukredite", "Wohnungsbaukredite, insgesamt", "A2C.A.R.A.2250.EUR.N", "SUD131Z"],
+  ["Private Haushalte · Wohnungsbaukredite", "Wohnungsbaukredite, variabel oder Zinsbindung bis 1 Jahr", "A2C.F.R.A.2250.EUR.N", "SUD116"],
+  ["Private Haushalte · Wohnungsbaukredite", "Wohnungsbaukredite, Zinsbindung über 1 bis 5 Jahre", "A2C.I.R.A.2250.EUR.N", "SUD117"],
+  ["Private Haushalte · Wohnungsbaukredite", "Wohnungsbaukredite, Zinsbindung über 5 bis 10 Jahre", "A2C.O.R.A.2250.EUR.N", "SUD118"],
+  ["Private Haushalte · Wohnungsbaukredite", "Wohnungsbaukredite, Zinsbindung über 10 Jahre", "A2C.P.R.A.2250.EUR.N", "SUD119"],
+  ["Private Haushalte · Konsumentenkredite", "Konsumentenkredite, insgesamt", "A2B.A.R.A.2250.EUR.N", "SUD130Z"],
+  ["Private Haushalte · Konsumentenkredite", "Konsumentenkredite, variabel oder Zinsbindung bis 1 Jahr", "A2B.F.R.A.2250.EUR.N", "SUD113"],
+  ["Private Haushalte · Konsumentenkredite", "Konsumentenkredite, Zinsbindung über 1 bis 5 Jahre", "A2B.I.R.A.2250.EUR.N", "SUD114"],
+  ["Private Haushalte · Konsumentenkredite", "Konsumentenkredite, Zinsbindung über 5 Jahre", "A2B.J.R.A.2250.EUR.N", "SUD115"],
+  ["Private Haushalte · Sonstige Kredite", "Sonstige Kredite, insgesamt", "A2D.A.R.A.2250.EUR.N", "SUD120Z"],
+  ["Private Haushalte · Sonstige Kredite", "Sonstige Kredite, variabel oder Zinsbindung bis 1 Jahr", "A2D.F.R.A.2250.EUR.N", "SUD120"],
+  ["Private Haushalte · Sonstige Kredite", "Sonstige Kredite, Zinsbindung über 1 bis 5 Jahre", "A2D.I.R.A.2250.EUR.N", "SUD121"],
+  ["Private Haushalte · Sonstige Kredite", "Sonstige Kredite, Zinsbindung über 5 Jahre", "A2D.J.R.A.2250.EUR.N", "SUD122"],
+  ["Selbständige Privatpersonen", "Sonstige Kredite an Selbständige, variabel oder Zinsbindung bis 1 Jahr", "A2D.F.R.A.2253.EUR.N", "SUD133"],
+  ["Selbständige Privatpersonen", "Sonstige Kredite an Selbständige, Zinsbindung über 1 bis 5 Jahre", "A2D.I.R.A.2253.EUR.N", "SUD134"],
+  ["Selbständige Privatpersonen", "Sonstige Kredite an Selbständige, Zinsbindung über 5 Jahre", "A2D.J.R.A.2253.EUR.N", "SUD135"],
+  ["Private Haushalte · Revolvierend", "Dispositions- und Überziehungskredite", "A2Z1.A.R.A.2250.EUR.N", "SUD112"],
+  ["Private Haushalte · Revolvierend", "Echte Kreditkartenkredite", "A2Z3.A.R.A.2250.EUR.N", "SUD132"],
+  ["Unternehmen (nichtfinanzielle Kapitalgesellschaften)", "Unternehmenskredite, insgesamt", "A2A.A.R.A.2240.EUR.N", "SUD939A"],
+  ["Unternehmen (nichtfinanzielle Kapitalgesellschaften)", "bis 1 Mio. €, variabel oder Zinsbindung bis 1 Jahr", "A2A.F.R.0.2240.EUR.N", "SUD124"],
+  ["Unternehmen (nichtfinanzielle Kapitalgesellschaften)", "bis 1 Mio. €, Zinsbindung über 1 bis 5 Jahre", "A2A.I.R.0.2240.EUR.N", "SUD125"],
+  ["Unternehmen (nichtfinanzielle Kapitalgesellschaften)", "bis 1 Mio. €, Zinsbindung über 5 Jahre", "A2A.J.R.0.2240.EUR.N", "SUD126"],
+  ["Unternehmen (nichtfinanzielle Kapitalgesellschaften)", "über 1 Mio. €, variabel oder Zinsbindung bis 1 Jahr", "A2A.F.R.1.2240.EUR.N", "SUD127"],
+  ["Unternehmen (nichtfinanzielle Kapitalgesellschaften)", "über 1 Mio. €, Zinsbindung über 1 bis 5 Jahre", "A2A.I.R.1.2240.EUR.N", "SUD128"],
+  ["Unternehmen (nichtfinanzielle Kapitalgesellschaften)", "über 1 Mio. €, Zinsbindung über 5 Jahre", "A2A.J.R.1.2240.EUR.N", "SUD129"],
+  ["Unternehmen (nichtfinanzielle Kapitalgesellschaften)", "Revolvierende Kredite und Überziehungskredite", "A2Z1.A.R.A.2240.EUR.N", "SUD123"],
+];
+
+const MONTHS = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+const fmtMonth = p => { const [y, m] = p.split("-"); return `${MONTHS[+m - 1]} ${y}`; };
+const fmtShort = p => { const [y, m] = p.split("-"); return `${m}/${y}`; };
+const fmtRate = v => v.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtDate = d => { const [y, m, t] = d.split("-"); return `${t}.${m}.${y}`; };
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const typeSel = document.getElementById("type");
+const dateIn = document.getElementById("date");
+const out = document.getElementById("result");
+const cache = new Map();
+
+// Build grouped select
+let og = null;
+TYPES.forEach(([group, label], i) => {
+  if (!og || og.label !== group) { og = document.createElement("optgroup"); og.label = group; typeSel.appendChild(og); }
+  const o = document.createElement("option"); o.value = i; o.textContent = label; og.appendChild(o);
+});
+typeSel.value = "4";
+const today = new Date();
+dateIn.max = today.toISOString().slice(0, 10);
+dateIn.value = today.toISOString().slice(0, 10);
+
+async function load(key) {
+  if (cache.has(key)) return cache.get(key);
+  const p = fetch(API + "M.DE.B." + key + "?detail=dataonly", { headers: { Accept: "application/vnd.sdmx.data+csv;version=1.0.0" } })
+    .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+    .then(txt => {
+      const lines = txt.replace(/^﻿/, "").trim().split(/\r?\n/);
+      const head = lines.shift().split(";");
+      const iP = head.indexOf("TIME_PERIOD"), iV = head.indexOf("OBS_VALUE"), iS = head.indexOf("OBS_STATUS");
+      return lines.map(l => l.split(";"))
+        .filter(c => c[iV] !== "" && c[iV] !== undefined && !isNaN(parseFloat(c[iV])))
+        .map(c => ({ p: c[iP], v: parseFloat(c[iV]), prelim: c[iS] === "P" }));
+    });
+  cache.set(key, p);
+  p.catch(() => cache.delete(key));
+  return p;
+}
+
+async function show() {
+  const [, label, key, sud] = TYPES[+typeSel.value];
+  const date = dateIn.value;
+  if (!date) return;
+  const want = date.slice(0, 7);
+  out.innerHTML = `<p class="meta"><span>Lade Daten der Bundesbank …</span></p>`;
+  let data;
+  try { data = await load(key); }
+  catch (e) {
+    out.innerHTML = `<p class="error">Die Daten konnten nicht von der Bundesbank geladen werden (${esc(e.message)}). Bitte Internetverbindung prüfen und erneut versuchen.</p>`;
+    return;
+  }
+  if (!data.length) { out.innerHTML = `<p class="error">Für diese Kreditart liefert die Bundesbank keine Werte.</p>`; return; }
+
+  const first = data[0].p, last = data[data.length - 1].p;
+  let idx = data.findIndex(d => d.p === want);
+  let notice = "";
+  if (want < first) {
+    out.innerHTML = `<p class="error">Für diese Kreditart gibt es Werte erst ab ${fmtMonth(first)}. Bitte einen späteren Stichtag wählen.</p>`;
+    return;
+  }
+  if (idx === -1) {
+    // not yet published, or a gap: take the latest month before the Stichtag
+    for (let i = data.length - 1; i >= 0; i--) if (data[i].p < want) { idx = i; break; }
+    notice = want > last
+      ? `Für ${fmtMonth(want)} hat die Bundesbank noch keinen Wert veröffentlicht. Angezeigt wird der jüngste verfügbare Monat.`
+      : `Für ${fmtMonth(want)} liegt kein Wert vor. Angezeigt wird der letzte Monat davor.`;
+  }
+  const obs = data[idx];
+  const prevYear = data.find(d => d.p === `${+obs.p.slice(0, 4) - 1}${obs.p.slice(4)}`);
+  const diff = prevYear ? obs.v - prevYear.v : null;
+
+  const neigh = [];
+  for (let i = idx - 2; i <= idx + 2; i++) {
+    const d = data[i];
+    neigh.push(`<div class="${i === idx ? "on" : ""}"><span class="m">${d ? fmtShort(d.p) : "–"}</span><span class="v">${d ? fmtRate(d.v) + " %" : "–"}</span></div>`);
+  }
+
+  const citation = `Effektivzinssatz laut MFI-Zinsstatistik der Deutschen Bundesbank, Neugeschäft, ${label} (Zeitreihe ${sud}, BBIM1.M.DE.B.${key}), Berichtsmonat ${fmtMonth(obs.p)}: ${fmtRate(obs.v)} % p.a.${obs.prelim ? " (vorläufig)" : ""}`;
+
+  out.innerHTML = `
+    ${notice ? `<div class="notice">${notice}</div>` : ""}
+    <div class="headline">
+      <div class="rate">${fmtRate(obs.v)}<small>% p.a.</small></div>
+      <div class="meta">
+        <strong>${esc(label)}</strong>
+        <span>Stichtag ${fmtDate(date)} · Berichtsmonat ${fmtMonth(obs.p)}</span>
+        <span>${obs.prelim ? `<span class="pill warn">vorläufig</span>` : `<span class="pill">endgültig</span>`}
+        ${diff !== null ? ` &nbsp;${diff >= 0 ? "+" : "−"}${fmtRate(Math.abs(diff))} Prozentpunkte zum Vorjahresmonat` : ""}</span>
+      </div>
+    </div>
+    <div class="neighbours" aria-label="Benachbarte Monate">${neigh.join("")}</div>
+    <div class="chart-wrap">${chart(data, idx)}</div>
+    <div class="cite">
+      <div class="cite-text" id="cite">${esc(citation)}</div>
+      <div class="cite-row">
+        <button type="button" class="ghost" id="copy">Angabe kopieren</button>
+        <a href="${BBK_LINK("BBIM1.M.DE.B." + key)}" target="_blank" rel="noopener">Zeitreihe ${sud} bei der Bundesbank ansehen</a>
+      </div>
+    </div>`;
+
+  document.getElementById("copy").addEventListener("click", e => {
+    const btn = e.currentTarget;
+    navigator.clipboard.writeText(citation).then(() => { btn.textContent = "Kopiert"; setTimeout(() => btn.textContent = "Angabe kopieren", 1600); })
+      .catch(() => { const r = document.createRange(); r.selectNodeContents(document.getElementById("cite")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+  });
+}
+
+// SVG line chart: 36 months up to (and a little after) the selected month
+function chart(data, idx) {
+  const from = Math.max(0, idx - 30), to = Math.min(data.length - 1, idx + 6);
+  const pts = data.slice(from, to + 1);
+  const W = 700, H = 200, L = 44, R = 12, T = 14, B = 28;
+  let lo = Math.min(...pts.map(d => d.v)), hi = Math.max(...pts.map(d => d.v));
+  const pad = Math.max(0.1, (hi - lo) * 0.15); lo -= pad; hi += pad;
+  const step = niceStep((hi - lo) / 4);
+  lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+  const x = i => L + (pts.length === 1 ? 0 : i * (W - L - R) / (pts.length - 1));
+  const y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  let grid = "";
+  for (let v = lo; v <= hi + 1e-9; v += step) {
+    grid += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/>` +
+            `<text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${fmtRate(v)}</text>`;
+  }
+  let xl = "";
+  pts.forEach((d, i) => { if (d.p.endsWith("-01")) xl += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${d.p.slice(0, 4)}</text><line x1="${x(i)}" x2="${x(i)}" y1="${H - B}" y2="${H - B + 4}" stroke="var(--line)"/>`; });
+  const line = pts.map((d, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(d.v).toFixed(1)}`).join("");
+  const area = `${line}L${x(pts.length - 1)},${H - B}L${x(0)},${H - B}Z`;
+  const si = idx - from, sx = x(si), sy = y(data[idx].v);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:420px" role="img" aria-label="Verlauf des Zinssatzes">
+    ${grid}${xl}
+    <path d="${area}" fill="var(--accent-soft)" stroke="none"/>
+    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+    <line x1="${sx}" x2="${sx}" y1="${T}" y2="${H - B}" stroke="var(--accent)" stroke-dasharray="3 3" stroke-width="1"/>
+    <circle cx="${sx}" cy="${sy}" r="5" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5"/>
+  </svg>`;
+}
+function niceStep(raw) {
+  const p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / p;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+}
+
+document.getElementById("f").addEventListener("submit", e => { e.preventDefault(); show(); });
+typeSel.addEventListener("change", show);
+dateIn.addEventListener("change", show);
+show();
+</script>
+</body>
+</html>
