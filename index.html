@@ -149,6 +149,18 @@ svg text { fill: var(--muted); font: 10px var(--mono); letter-spacing: 0.04em; }
 .verdict span { font-size: 0.88rem; color: var(--muted); max-width: 62ch; }
 @media (max-width: 600px) { .verdict { grid-template-columns: 1fr; } .verdict::before { grid-row: auto; padding-top: 0; } }
 
+/* Repayments */
+.tilg { display: grid; gap: 24px; border-top: 1px solid var(--line); padding-top: 24px; }
+.tilg-head { display: grid; gap: 4px; }
+.extras { display: grid; gap: 12px; }
+#extra-list { display: grid; gap: 12px; }
+#extra-list:empty { display: none; }
+.extra-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 24px; align-items: end; }
+@media (max-width: 600px) { .extra-row { grid-template-columns: 1fr 1fr; } .extra-row .x-del { grid-column: 1 / -1; justify-self: start; } }
+.x-del { padding: 0 0 12px; border: 0; background: none; cursor: pointer; font: 500 0.7rem var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); transition: color .2s; }
+.x-del:hover { color: var(--accent); }
+.tilg-sum { display: flex; flex-wrap: wrap; gap: 6px 32px; }
+
 /* Per-year breakdown */
 .years { display: grid; gap: 12px; }
 .years-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; align-items: baseline; }
@@ -245,7 +257,7 @@ footer p { margin: 0; }
       </fieldset>
 
       <div class="calc-grid">
-        <label for="amount"><span class="tag">Darlehenssumme (EUR)</span>
+        <label for="amount"><span class="tag">Darlehensstand zu Beginn (EUR)</span>
           <input type="text" id="amount" inputmode="decimal" value="250.000">
         </label>
         <label for="agreed"><span class="tag">Vereinbarter Zins (% p.a.)</span>
@@ -266,6 +278,34 @@ footer p { margin: 0; }
           <select id="fy"></select>
           <span class="hint">Abweichendes Wirtschaftsjahr: Zuordnung zum Veranlagungszeitraum, in dem es endet (§ 7 Abs. 4 S. 2 KStG)</span>
         </label>
+      </div>
+
+      <div class="tilg">
+        <div class="tilg-head">
+          <span class="tag">Tilgung (optional)</span>
+          <span class="hint">Tilgungen mindern den Darlehensstand ab dem Tag der Zahlung. Leer lassen, wenn nicht getilgt wird.</span>
+        </div>
+        <div class="calc-grid">
+          <label for="tilg-amt"><span class="tag">Regelmäßige Tilgung (EUR)</span>
+            <input type="text" id="tilg-amt" inputmode="decimal" placeholder="z. B. 2.500">
+          </label>
+          <label for="tilg-freq"><span class="tag">Rhythmus</span>
+            <select id="tilg-freq">
+              <option value="1">monatlich</option>
+              <option value="3" selected>vierteljährlich</option>
+              <option value="6">halbjährlich</option>
+              <option value="12">jährlich</option>
+            </select>
+          </label>
+          <label for="tilg-first"><span class="tag">Erste Tilgung am</span>
+            <input type="date" id="tilg-first">
+          </label>
+        </div>
+        <div class="extras">
+          <span class="tag">Sondertilgungen</span>
+          <div id="extra-list"></div>
+          <div><button type="button" class="ghost" id="add-extra">+ Sondertilgung hinzufügen</button></div>
+        </div>
       </div>
 
       <div id="calc-out" aria-live="polite"></div>
@@ -333,7 +373,7 @@ footer p { margin: 0; }
     <div class="col-a"><span class="tag">Quelle &amp; Hinweise</span></div>
     <div class="col-b">
       <p>Deutsche Bundesbank, MFI-Zinsstatistik (Neugeschäft), abgerufen live über die <a href="https://api.statistiken.bundesbank.de" target="_blank" rel="noopener">Statistik-API</a>. Werte sind volumengewichtete Durchschnitte aller im Berichtsmonat neu abgeschlossenen Kredite, als Effektivzinssatz ohne sonstige Kosten wie Gebühren oder Versicherungen. Die Bundesbank veröffentlicht etwa fünf Wochen nach Monatsende; der jüngste Monat ist vorläufig.</p>
-      <p>Zinsen werden linear auf den gleichbleibenden Darlehensstand gerechnet (Tage/365), Tilgungen bleiben unberücksichtigt. Der fremdübliche Satz lässt sich von Hand anpassen, etwa für eine Margenteilung. Die Seite ersetzt keine steuerliche Beratung.</p>
+      <p>Zinsen werden linear auf den jeweiligen Darlehensstand gerechnet (Tage/365); eingegebene Tilgungen mindern den Darlehensstand ab dem Tag der Zahlung. Der fremdübliche Satz lässt sich von Hand anpassen, etwa für eine Margenteilung. Die Seite ersetzt keine steuerliche Beratung.</p>
     </div>
   </footer>
 </main>
@@ -567,8 +607,23 @@ function calc() {
   // Split the period by Wirtschaftsjahr; each WJ belongs to the VZ in which it ends (§ 7 Abs. 4 S. 2 KStG)
   const startMonth = +fyIn.value;
   const r2 = v => Math.round(v * 100) / 100;
-  const rows = fySegments(f, t, startMonth).map(s => {
-    const za = r2(amount * arm / 100 * s.days / 365), zg = r2(amount * agreed / 100 * s.days / 365);
+  const { ev, errs } = tilgEvents(f, t, amount);
+  if (errs.length) { calcOut.innerHTML = `<p class="error">Bitte ${errs.join(", ")} angeben.</p>`; return; }
+  const segs = fySegments(f, t, startMonth);
+  // Daily balance: a repayment lowers the balance from its payment day on
+  let bal = amount, ei = 0;
+  for (const s of segs) {
+    s.balDays = 0;
+    for (let d = s.from.getTime(); d <= s.to.getTime(); d += 864e5) {
+      while (ei < ev.length && ev[ei].d.getTime() <= d) { ev[ei].applied = Math.min(bal, ev[ei].amt); bal = r2(bal - ev[ei].applied); ei++; }
+      s.balDays += bal;
+    }
+    s.avg = s.balDays / s.days; s.endBal = bal;
+  }
+  const hasTilg = ev.length > 0;
+  const tilgTotal = r2(ev.reduce((a, e) => a + (e.applied || 0), 0));
+  const rows = segs.map(s => {
+    const za = r2(s.balDays * arm / 100 / 365), zg = r2(s.balDays * agreed / 100 / 365);
     const d = r2(za - zg);
     return { ...s, za, zg, d, vga: dir === "out" ? Math.max(0, d) : Math.max(0, -d) };
   });
@@ -582,6 +637,7 @@ function calc() {
       <td><strong>${r.vz}</strong></td>
       <td>${wjTxt(r)}${partial(r) ? `<span class="sub">${fmtD(r.from)}–${fmtD(r.to)}</span>` : ""}</td>
       <td>${r.days}</td>
+      ${hasTilg ? `<td>${eur(r.avg)}<span class="sub">Ende ${eur(r.endBal)}</span></td>` : ""}
       <td>${eur(r.za)}</td>
       <td>${eur(r.zg)}</td>
       <td class="${r.vga > 0 ? "hot" : ""}">${eur(r.vga)}</td></tr>`).join("");
@@ -613,11 +669,12 @@ function calc() {
       </div>
       <div class="table-scroll">
         <table class="year-table">
-          <thead><tr><th>VZ</th><th>Wirtschaftsjahr${rows.some(partial) ? " / Zinszeitraum" : ""}</th><th>Tage</th><th>Fremdüblich</th><th>Vereinbart</th><th>Mögliche vGA</th></tr></thead>
+          <thead><tr><th>VZ</th><th>Wirtschaftsjahr${rows.some(partial) ? " / Zinszeitraum" : ""}</th><th>Tage</th>${hasTilg ? "<th>Ø Darlehensstand</th>" : ""}<th>Fremdüblich</th><th>Vereinbart</th><th>Mögliche vGA</th></tr></thead>
           <tbody>${yearRows}</tbody>
-          <tfoot><tr><td>Summe</td><td></td><td>${days}</td><td>${eur(zArm)}</td><td>${eur(zAgreed)}</td><td class="${vga > 0 ? "hot" : ""}">${eur(vga)}</td></tr></tfoot>
+          <tfoot><tr><td>Summe</td><td></td><td>${days}</td>${hasTilg ? "<td></td>" : ""}<td>${eur(zArm)}</td><td>${eur(zAgreed)}</td><td class="${vga > 0 ? "hot" : ""}">${eur(vga)}</td></tr></tfoot>
         </table>
       </div>
+      ${hasTilg ? `<div class="tilg-sum"><span class="tag">Tilgungen im Zeitraum: ${ev.filter(e => e.applied > 0).length} Zahlungen · ${eur(tilgTotal)}</span><span class="tag">Darlehensstand am ${toTxt}: ${eur(bal)}</span></div>` : ""}
       <p class="hint">Die Körperschaftsteuer ist eine Jahresabschnittsteuer: Die vGA mindert nicht das Einkommen des jeweiligen Veranlagungszeitraums und ist dort außerbilanziell hinzuzurechnen. Beim Gesellschafter richtet sich die Erfassung der Kapitalerträge nach dem Zufluss (§ 11 EStG).</p>
     </div>
     <div class="cite-row"><button type="button" class="ghost" id="copy-calc">Berechnung kopieren</button></div>`;
@@ -625,7 +682,8 @@ function calc() {
   const summary = [
     `Fremdvergleich Darlehenszins (§ 8 Abs. 3 S. 2 KStG, R 8.5 KStR)`,
     `Darlehen: ${dir === "out" ? "Gesellschaft an Gesellschafter" : "Gesellschafter an Gesellschaft"}`,
-    `Darlehenssumme: ${eur(amount)}`,
+    `Darlehensstand zu Beginn: ${eur(amount)}`,
+    ...(hasTilg ? [`Tilgungen im Zeitraum: ${ev.filter(e => e.applied > 0).map(e => `${fmtD(e.d)} ${eur(e.applied)}`).join("; ")} (gesamt ${eur(tilgTotal)}; Darlehensstand am Ende ${eur(bal)})`] : []),
     `Zeitraum: ${fromTxt} bis ${toTxt} (${days} Tage, Tage/365)`,
     `Fremdüblicher Zinssatz: ${fmtRate(arm)} % p.a.` + (cur && !armManual ? ` (Deutsche Bundesbank, MFI-Zinsstatistik, ${cur.label}, ${cur.sud}, ${fmtMonth(cur.p)}${cur.prelim ? ", vorläufig" : ""})` : cur ? ` (von Hand angepasst; Bundesbank ${cur.sud}, ${fmtMonth(cur.p)}: ${fmtRate(cur.v)} %)` : ""),
     `Vereinbarter Zinssatz: ${fmtRate(agreed)} % p.a.`,
@@ -635,7 +693,7 @@ function calc() {
     `Mögliche vGA: ${eur(vga)}`,
     ``,
     `Aufteilung nach Veranlagungszeitraum (${isCal ? "Wirtschaftsjahr = Kalenderjahr" : "abweichendes Wirtschaftsjahr " + fyLabel(startMonth) + ", § 7 Abs. 4 S. 2 KStG"}):`,
-    ...rows.map(r => `VZ ${r.vz}${isCal ? "" : ` (WJ ${wjTxt(r)})`}: ${fmtD(r.from)}–${fmtD(r.to)}, ${r.days} Tage, fremdüblich ${eur(r.za)}, vereinbart ${eur(r.zg)}, mögliche vGA ${eur(r.vga)}`),
+    ...rows.map(r => `VZ ${r.vz}${isCal ? "" : ` (WJ ${wjTxt(r)})`}: ${fmtD(r.from)}–${fmtD(r.to)}, ${r.days} Tage, ${hasTilg ? `Ø Darlehensstand ${eur(r.avg)}, ` : ""}fremdüblich ${eur(r.za)}, vereinbart ${eur(r.zg)}, mögliche vGA ${eur(r.vga)}`),
   ].join("\n");
   $("copy-calc").addEventListener("click", e => {
     const btn = e.currentTarget;
@@ -669,6 +727,58 @@ function fySegments(f, t, startMonth) {
     c = new Date(to.getTime() + 864e5);
   }
   return out;
+}
+
+// Repayments
+const tilgAmt = $("tilg-amt"), tilgFreq = $("tilg-freq"), tilgFirst = $("tilg-first"), extraList = $("extra-list");
+function addExtra() {
+  const row = document.createElement("div");
+  row.className = "extra-row";
+  const n = extraList.children.length + 1;
+  row.innerHTML = `<label for="x-date-${n}"><span class="tag">Datum</span><input type="date" id="x-date-${n}" class="x-date"></label>
+    <label for="x-amt-${n}"><span class="tag">Betrag (EUR)</span><input type="text" id="x-amt-${n}" inputmode="decimal" class="x-amt"></label>
+    <button type="button" class="x-del" aria-label="Sondertilgung entfernen">Entfernen</button>`;
+  row.querySelectorAll("input").forEach(i => i.addEventListener("input", calc));
+  row.querySelector(".x-del").addEventListener("click", () => { row.remove(); calc(); });
+  extraList.appendChild(row);
+  row.querySelector(".x-date").focus();
+}
+$("add-extra").addEventListener("click", () => { addExtra(); calc(); });
+[tilgAmt, tilgFirst].forEach(el => el.addEventListener("input", calc));
+tilgFreq.addEventListener("change", calc);
+
+const addMonths = (first, n) => {
+  const y = first.getUTCFullYear(), m = first.getUTCMonth() + n;
+  const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(y, m, Math.min(first.getUTCDate(), last)));
+};
+// Repayments inside [f, t], sorted by date. Repayments before the period start are already reflected in the starting balance.
+function tilgEvents(f, t, amount) {
+  const ev = [], errs = [];
+  if (tilgAmt.value.trim()) {
+    const reg = parseDe(tilgAmt.value);
+    if (!(reg > 0)) errs.push("eine gültige regelmäßige Tilgung");
+    else if (!tilgFirst.value) errs.push("das Datum der ersten Tilgung");
+    else {
+      const first = new Date(tilgFirst.value + "T00:00:00Z"), step = +tilgFreq.value;
+      let total = 0;
+      for (let k = 0, d = first; d <= t && total < amount && k < 1200; k++, d = addMonths(first, step * k)) {
+        if (d >= f) { ev.push({ d, amt: reg }); total += reg; }
+      }
+    }
+  }
+  let bad = false;
+  extraList.querySelectorAll(".extra-row").forEach(row => {
+    const dv = row.querySelector(".x-date").value, av = row.querySelector(".x-amt").value.trim();
+    if (!dv && !av) return;
+    const a = parseDe(av);
+    if (!dv || !(a > 0)) { bad = true; return; }
+    const d = new Date(dv + "T00:00:00Z");
+    if (d >= f && d <= t) ev.push({ d, amt: a });
+  });
+  if (bad) errs.push("Datum und Betrag jeder Sondertilgung");
+  ev.sort((a, b) => a.d - b.d);
+  return { ev, errs };
 }
 
 [amountIn, agreedIn].forEach(el => el.addEventListener("input", calc));
