@@ -6,7 +6,7 @@
 <title>Marktzins zum Stichtag</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500&display=swap">
 <style>
 /* Swiss editorial: off-white page, 12-col asymmetric grid, sections divided only by 1px rules and whitespace, no rounded corners.
    Red is reserved for the primary button and active states. */
@@ -17,9 +17,9 @@
   --muted: #5C5B57;
   --accent: #D9381E;
   --hover: #EEECE5;
-  --serif: "Instrument Serif", "Times New Roman", Georgia, serif;
-  --sans: "Plus Jakarta Sans", "Helvetica Neue", Arial, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --sans: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, monospace;
   color-scheme: light;
 }
 * { box-sizing: border-box; border-radius: 0 !important; }
@@ -39,7 +39,7 @@ a:hover { text-decoration-color: var(--fg); }
 nav { border-bottom: 1px solid var(--line); position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 5; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 10; }
 nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 24px; height: 60px; }
-.logo { font: 500 0.85rem var(--mono); letter-spacing: 0.06em; text-decoration: none; }
+.logo { font: 800 0.95rem var(--display); letter-spacing: -0.01em; text-decoration: none; }
 .navlinks { display: flex; gap: 32px; }
 .navlinks a { font-size: 0.88rem; text-decoration: none; color: var(--muted); transition: color .2s; }
 .navlinks a:hover { color: var(--fg); }
@@ -59,8 +59,8 @@ button.ghost:hover { color: var(--accent); border-color: var(--accent); }
 
 /* Hero */
 .hero { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; padding-block: 72px 56px; border-bottom: 1px solid var(--line); }
-.hero h1 { grid-column: 1 / span 8; margin: 0; font: 400 clamp(2.6rem, 6.4vw, 5.4rem)/0.98 var(--serif); letter-spacing: -0.02em; text-wrap: balance; }
-.hero h1 em { color: var(--muted); }
+.hero h1 { grid-column: 1 / span 8; margin: 0; font: 800 clamp(2.5rem, 6.2vw, 5.2rem)/0.94 var(--display); letter-spacing: -0.045em; text-wrap: balance; }
+.hero h1 em { color: var(--muted); font-style: normal; font-weight: 400; }
 .hero .side { grid-column: 9 / span 4; align-self: end; display: grid; gap: 20px; }
 .hero .side p { margin: 0; color: var(--muted); font-size: 0.95rem; }
 .hero .meta-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 32px; padding-top: 24px; }
@@ -70,7 +70,7 @@ button.ghost:hover { color: var(--accent); border-color: var(--accent); }
 section.block { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; padding-block: 56px; border-bottom: 1px solid var(--line); }
 .block > .head { grid-column: 1 / span 3; display: grid; gap: 12px; align-content: start; }
 .block > .body { grid-column: 4 / span 9; display: grid; gap: 32px; min-width: 0; }
-.block h2 { margin: 0; font: 400 2.2rem/1.05 var(--serif); letter-spacing: -0.01em; }
+.block h2 { margin: 0; font: 700 2rem/1.02 var(--display); letter-spacing: -0.035em; }
 .block .lead { margin: 0; color: var(--muted); font-size: 0.92rem; max-width: 62ch; }
 @media (max-width: 860px) { .block > .head, .block > .body { grid-column: 1 / -1; } }
 
@@ -90,7 +90,7 @@ form#f { display: grid; grid-template-columns: 1fr 200px auto; gap: 24px; align-
 .result { display: grid; gap: 28px; }
 .headline { display: grid; grid-template-columns: auto 1fr; gap: 12px 40px; align-items: end; padding-top: 8px; }
 @media (max-width: 600px) { .headline { grid-template-columns: 1fr; } }
-.rate { font: 400 clamp(3.4rem, 8vw, 5.6rem)/0.9 var(--mono); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.rate { font: 700 clamp(3.4rem, 8vw, 5.8rem)/0.9 var(--display); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
 .rate small { font: 500 0.8rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-left: 8px; }
 .meta { display: grid; gap: 4px; min-width: 0; margin: 0; }
 .meta strong { font-weight: 600; }
@@ -144,10 +144,26 @@ svg text { fill: var(--muted); font: 10px var(--mono); letter-spacing: 0.04em; }
 .verdict::before { grid-row: span 2; font: 500 0.7rem var(--mono); letter-spacing: 0.08em; padding-top: 10px; }
 .verdict.bad::before { content: "vGA"; color: var(--accent); }
 .verdict.ok::before { content: "KEINE vGA"; color: var(--muted); }
-.verdict strong { font: 400 1.9rem/1.1 var(--serif); }
+.verdict strong { font: 700 1.6rem/1.15 var(--display); letter-spacing: -0.025em; }
 .verdict.bad strong { color: var(--accent); }
 .verdict span { font-size: 0.88rem; color: var(--muted); max-width: 62ch; }
 @media (max-width: 600px) { .verdict { grid-template-columns: 1fr; } .verdict::before { grid-row: auto; padding-top: 0; } }
+
+/* Per-year breakdown */
+.years { display: grid; gap: 12px; }
+.years-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; align-items: baseline; }
+.table-scroll { overflow-x: auto; }
+.year-table { width: 100%; min-width: 560px; border-collapse: collapse; font-variant-numeric: tabular-nums; border-top: 1px solid var(--fg); }
+.year-table th { font: 500 0.66rem var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); text-align: right; padding: 10px 0 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.year-table td { padding: 12px 0 12px 16px; border-bottom: 1px solid var(--line); text-align: right; font: 0.88rem var(--mono); white-space: nowrap; vertical-align: top; transition: background .2s; }
+.year-table th:first-child, .year-table td:first-child { padding-left: 0; text-align: left; }
+.year-table th:nth-child(2), .year-table td:nth-child(2) { text-align: left; }
+.year-table td:first-child strong { font: 700 1.05rem var(--display); letter-spacing: -0.02em; }
+.year-table tbody tr:hover td { background: var(--hover); }
+.year-table .sub { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+.year-table td.hot { color: var(--accent); font-weight: 500; }
+.year-table tfoot td { font-weight: 500; border-bottom: 1px solid var(--fg); }
+.year-table tfoot td:first-child { font: 500 0.66rem var(--mono); text-transform: uppercase; letter-spacing: 0.08em; }
 
 /* Legal reasoning */
 .reason { display: grid; gap: 0; border-top: 1px solid var(--fg); }
@@ -156,7 +172,7 @@ svg text { fill: var(--muted); font: 10px var(--mono); letter-spacing: 0.04em; }
 .reason-row .tag { padding-top: 4px; }
 .reason-row h3 { margin: 0 0 6px; font: 600 0.95rem var(--sans); }
 .reason-row p { margin: 0; color: var(--muted); font-size: 0.92rem; max-width: 68ch; }
-.summary { margin: 0; font: 400 1.5rem/1.3 var(--serif); max-width: 40ch; }
+.summary { margin: 0; font: 500 1.35rem/1.35 var(--display); letter-spacing: -0.015em; max-width: 46ch; }
 .sources { display: grid; gap: 6px; font-size: 0.82rem; color: var(--muted); padding: 0; margin: 0; list-style: none; }
 .sources li { display: grid; grid-template-columns: 56px 1fr; gap: 16px; }
 
@@ -244,8 +260,12 @@ footer p { margin: 0; }
         </label>
         <label for="to"><span class="tag">Zeitraum bis</span>
           <input type="date" id="to">
+          <span class="hint" id="days"></span>
         </label>
-        <div class="days tag" id="days"></div>
+        <label for="fy"><span class="tag">Wirtschaftsjahr der Gesellschaft</span>
+          <select id="fy"></select>
+          <span class="hint">Abweichendes Wirtschaftsjahr: Zuordnung zum Veranlagungszeitraum, in dem es endet (§ 7 Abs. 4 S. 2 KStG)</span>
+        </label>
       </div>
 
       <div id="calc-out" aria-live="polite"></div>
@@ -544,11 +564,27 @@ function calc() {
   if (!(days > 0)) problems.push("einen Zeitraum, dessen Ende nach dem Beginn liegt");
   if (problems.length) { calcOut.innerHTML = `<p class="error">Bitte ${problems.join(", ")} angeben.</p>`; return; }
 
-  const factor = amount * days / 365 / 100;
-  const zArm = Math.round(arm * factor * 100) / 100, zAgreed = Math.round(agreed * factor * 100) / 100;
-  const diff = Math.round((zArm - zAgreed) * 100) / 100; // >0: vereinbart weniger als fremdüblich
-  const vga = dir === "out" ? Math.max(0, diff) : Math.max(0, -diff);
+  // Split the period by Wirtschaftsjahr; each WJ belongs to the VZ in which it ends (§ 7 Abs. 4 S. 2 KStG)
+  const startMonth = +fyIn.value;
+  const r2 = v => Math.round(v * 100) / 100;
+  const rows = fySegments(f, t, startMonth).map(s => {
+    const za = r2(amount * arm / 100 * s.days / 365), zg = r2(amount * agreed / 100 * s.days / 365);
+    const d = r2(za - zg);
+    return { ...s, za, zg, d, vga: dir === "out" ? Math.max(0, d) : Math.max(0, -d) };
+  });
+  const sum = k => r2(rows.reduce((a, r) => a + r[k], 0));
+  const zArm = sum("za"), zAgreed = sum("zg"), diff = sum("d"), vga = sum("vga"); // diff > 0: vereinbart weniger als fremdüblich
   const fromTxt = fmtDate(fromIn.value), toTxt = fmtDate(toIn.value);
+  const isCal = startMonth === 1;
+  const wjTxt = r => isCal ? String(r.vz) : `${fmtD(r.wjStart)}–${fmtD(r.wjEnd)}`;
+  const partial = r => r.from.getTime() !== r.wjStart.getTime() || r.to.getTime() !== r.wjEnd.getTime();
+  const yearRows = rows.map(r => `<tr>
+      <td><strong>${r.vz}</strong></td>
+      <td>${wjTxt(r)}${partial(r) ? `<span class="sub">${fmtD(r.from)}–${fmtD(r.to)}</span>` : ""}</td>
+      <td>${r.days}</td>
+      <td>${eur(r.za)}</td>
+      <td>${eur(r.zg)}</td>
+      <td class="${r.vga > 0 ? "hot" : ""}">${eur(r.vga)}</td></tr>`).join("");
 
   let verdict;
   if (vga > 0) {
@@ -570,6 +606,20 @@ function calc() {
       <tr class="total"><td>Differenz (fremdüblich − vereinbart)</td><td>${diff >= 0 ? "" : "−"}${fmtRate(Math.abs(arm - agreed))} %-Pkt.</td><td>${eur(diff)}</td></tr>
     </table>
     ${verdict}
+    <div class="years">
+      <div class="years-head">
+        <span class="tag">Aufteilung nach Veranlagungszeitraum</span>
+        <span class="hint">${isCal ? "Wirtschaftsjahr = Kalenderjahr" : `Abweichendes Wirtschaftsjahr ${fyLabel(startMonth)}`}</span>
+      </div>
+      <div class="table-scroll">
+        <table class="year-table">
+          <thead><tr><th>VZ</th><th>Wirtschaftsjahr${rows.some(partial) ? " / Zinszeitraum" : ""}</th><th>Tage</th><th>Fremdüblich</th><th>Vereinbart</th><th>Mögliche vGA</th></tr></thead>
+          <tbody>${yearRows}</tbody>
+          <tfoot><tr><td>Summe</td><td></td><td>${days}</td><td>${eur(zArm)}</td><td>${eur(zAgreed)}</td><td class="${vga > 0 ? "hot" : ""}">${eur(vga)}</td></tr></tfoot>
+        </table>
+      </div>
+      <p class="hint">Die Körperschaftsteuer ist eine Jahresabschnittsteuer: Die vGA mindert nicht das Einkommen des jeweiligen Veranlagungszeitraums und ist dort außerbilanziell hinzuzurechnen. Beim Gesellschafter richtet sich die Erfassung der Kapitalerträge nach dem Zufluss (§ 11 EStG).</p>
+    </div>
     <div class="cite-row"><button type="button" class="ghost" id="copy-calc">Berechnung kopieren</button></div>`;
 
   const summary = [
@@ -583,12 +633,42 @@ function calc() {
     `Vereinbarte Zinsen: ${eur(zAgreed)}`,
     `Differenz: ${eur(diff)}`,
     `Mögliche vGA: ${eur(vga)}`,
+    ``,
+    `Aufteilung nach Veranlagungszeitraum (${isCal ? "Wirtschaftsjahr = Kalenderjahr" : "abweichendes Wirtschaftsjahr " + fyLabel(startMonth) + ", § 7 Abs. 4 S. 2 KStG"}):`,
+    ...rows.map(r => `VZ ${r.vz}${isCal ? "" : ` (WJ ${wjTxt(r)})`}: ${fmtD(r.from)}–${fmtD(r.to)}, ${r.days} Tage, fremdüblich ${eur(r.za)}, vereinbart ${eur(r.zg)}, mögliche vGA ${eur(r.vga)}`),
   ].join("\n");
   $("copy-calc").addEventListener("click", e => {
     const btn = e.currentTarget;
     navigator.clipboard.writeText(summary).then(() => { btn.textContent = "Kopiert"; setTimeout(() => btn.textContent = "Berechnung kopieren", 1600); })
       .catch(() => { btn.textContent = "Kopieren nicht möglich"; });
   });
+}
+
+const fyIn = $("fy");
+const pad = n => String(n).padStart(2, "0");
+const fmtD = d => `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}`;
+const fyLabel = m => m === 1 ? "01.01.–31.12." : `01.${pad(m)}.–${pad(new Date(Date.UTC(2001, m - 1, 0)).getUTCDate())}.${pad(m - 1)}.`;
+for (let m = 1; m <= 12; m++) {
+  const o = document.createElement("option"); o.value = m;
+  o.textContent = m === 1 ? "Kalenderjahr (01.01.–31.12.)" : `Abweichend (${fyLabel(m)})`;
+  fyIn.appendChild(o);
+}
+fyIn.addEventListener("change", calc);
+
+// Split [f, t] (inclusive, UTC dates) into Wirtschaftsjahr segments starting on the 1st of startMonth
+function fySegments(f, t, startMonth) {
+  const out = [];
+  let c = new Date(f);
+  while (c <= t) {
+    const y = c.getUTCFullYear(), m = c.getUTCMonth() + 1;
+    const sy = m >= startMonth ? y : y - 1;
+    const wjStart = new Date(Date.UTC(sy, startMonth - 1, 1));
+    const wjEnd = new Date(Date.UTC(sy + 1, startMonth - 1, 1) - 864e5);
+    const to = t < wjEnd ? t : wjEnd;
+    out.push({ vz: wjEnd.getUTCFullYear(), wjStart, wjEnd, from: new Date(c), to, days: Math.round((to - c) / 864e5) + 1 });
+    c = new Date(to.getTime() + 864e5);
+  }
+  return out;
 }
 
 [amountIn, agreedIn].forEach(el => el.addEventListener("input", calc));
