@@ -83,6 +83,30 @@ svg text { fill: var(--muted); font: 11px var(--mono); }
 .cite-text { font-size: 0.88rem; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; user-select: all; }
 .cite-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; }
 a { color: var(--accent); }
+.calc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 24px; display: grid; gap: 20px; }
+.calc h2 { margin: 0 0 4px; font-size: 1.3rem; font-weight: 600; }
+.calc .lead { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.dir { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.dir legend { font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-bottom: 6px; padding: 0; }
+.radio { display: flex; flex-direction: row; align-items: center; gap: 8px; flex: 1 1 240px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; color: var(--fg); font-size: 0.92rem; flex-wrap: wrap; }
+.radio span { color: var(--muted); font-size: 0.78rem; font-weight: 400; width: 100%; padding-left: 24px; }
+.radio:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.calc .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 640px) { .calc .grid { grid-template-columns: 1fr; } }
+.calc input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-family: var(--mono); font-variant-numeric: tabular-nums; min-width: 0; }
+.hint { font-size: 0.74rem; font-weight: 400; color: var(--muted); }
+.hint button { font-size: 0.74rem; padding: 0; border: 0; background: none; color: var(--accent); text-decoration: underline; font-weight: 400; cursor: pointer; }
+.days { align-self: end; font-size: 0.85rem; color: var(--muted); padding-bottom: 10px; }
+.calc-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.calc-table td { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.calc-table td:nth-child(2) { font-family: var(--mono); color: var(--muted); text-align: right; padding-right: 16px; white-space: nowrap; font-size: 0.88rem; }
+.calc-table td:last-child { font-family: var(--mono); text-align: right; white-space: nowrap; }
+.calc-table tr.total td { border-bottom: 0; font-weight: 600; padding-top: 14px; }
+.verdict { border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; }
+.verdict.bad { background: var(--warn-soft); color: var(--warn); }
+.verdict.ok { background: var(--accent-soft); color: var(--accent); }
+.verdict strong { font-size: 1.05rem; }
+.verdict span { font-size: 0.86rem; }
 .source { font-size: 0.82rem; color: var(--muted); max-width: 70ch; display: grid; gap: 6px; }
 .source p { margin: 0; }
 </style>
@@ -92,7 +116,7 @@ a { color: var(--accent); }
   <header>
     <div class="eyebrow">MFI-Zinsstatistik · Deutsche Bundesbank</div>
     <h1>Marktüblicher Zinssatz zum Stichtag</h1>
-    <p>Kreditart und Stichtag wählen. Angezeigt wird der durchschnittliche Effektivzinssatz deutscher Banken im Neugeschäft für den Monat, in den der Stichtag fällt.</p>
+    <p>Fremdvergleich für Darlehen zwischen Kapitalgesellschaft und Gesellschafter (verdeckte Gewinnausschüttung, § 8 Abs. 3 S. 2 KStG, R 8.5 KStR). Kreditart und Stichtag des Vertragsabschlusses wählen. Angezeigt wird der durchschnittliche Effektivzinssatz deutscher Banken im Neugeschäft für den Monat, in den der Stichtag fällt.</p>
   </header>
 
   <form id="f">
@@ -109,9 +133,46 @@ a { color: var(--accent); }
     <p class="meta"><span>Lade Daten der Bundesbank …</span></p>
   </section>
 
+  <section class="calc" aria-labelledby="calc-h">
+    <div>
+      <div class="eyebrow">Fremdvergleich</div>
+      <h2 id="calc-h">Zinsvergleich in Euro</h2>
+      <p class="lead">Vergleicht die vereinbarten Zinsen mit den Zinsen zum fremdüblichen Satz für die Darlehenssumme und den gewählten Zeitraum. Als fremdüblicher Satz dient der oben ermittelte Bundesbank-Wert. Für ein Darlehen an einen Gesellschafter (natürliche Person) passen meist die Kredite an private Haushalte, für ein Darlehen an die Gesellschaft die Unternehmenskredite.</p>
+    </div>
+
+    <fieldset class="dir">
+      <legend>Wer gewährt das Darlehen?</legend>
+      <label class="radio"><input type="radio" name="dir" id="dir-out" value="out" checked> Gesellschaft an Gesellschafter <span>vGA bei zu niedrigem Zins</span></label>
+      <label class="radio"><input type="radio" name="dir" id="dir-in" value="in"> Gesellschafter an Gesellschaft <span>vGA bei zu hohem Zins</span></label>
+    </fieldset>
+
+    <div class="grid">
+      <label for="amount">Darlehenssumme (EUR)
+        <input type="text" id="amount" inputmode="decimal" value="250.000">
+      </label>
+      <label for="agreed">Vereinbarter Zinssatz (% p.a.)
+        <input type="text" id="agreed" inputmode="decimal" value="1,50">
+      </label>
+      <label for="arm">Fremdüblicher Zinssatz (% p.a.)
+        <input type="text" id="arm" inputmode="decimal">
+        <span class="hint" id="arm-hint">aus der Bundesbank-Statistik übernommen</span>
+      </label>
+      <label for="from">Zeitraum von
+        <input type="date" id="from">
+      </label>
+      <label for="to">Zeitraum bis
+        <input type="date" id="to">
+      </label>
+      <div class="days" id="days"></div>
+    </div>
+
+    <div id="calc-out" aria-live="polite"></div>
+  </section>
+
   <footer class="source">
     <p><strong>Quelle:</strong> Deutsche Bundesbank, MFI-Zinsstatistik (Neugeschäft), abgerufen live über die <a href="https://api.statistiken.bundesbank.de" target="_blank" rel="noopener">Statistik-API</a>. Werte sind volumengewichtete Durchschnitte aller im Berichtsmonat neu abgeschlossenen Kredite, als Effektivzinssatz (AVJ/NDER) ohne sonstige Kosten wie Gebühren oder Versicherungen.</p>
     <p>Die Bundesbank veröffentlicht die Zahlen etwa fünf Wochen nach Monatsende. Der jüngste Monat ist vorläufig und kann sich noch ändern.</p>
+    <p><strong>Hinweise zur Berechnung:</strong> Zinsen werden linear auf den gleichbleibenden Darlehensstand gerechnet (Tage/365), Tilgungen bleiben unberücksichtigt. Der Bundesbank-Wert ist ein Durchschnitt; im Einzelfall können Bonität, Sicherheiten, Laufzeit und eine Bandbreite fremdüblicher Zinsen einen abweichenden Satz rechtfertigen. Je nach Fall kommt auch ein Mittelwert zwischen Soll- und Habenzins in Betracht. Der fremdübliche Satz lässt sich deshalb von Hand anpassen. Die Seite ersetzt keine steuerliche Beratung.</p>
   </footer>
 </main>
 
@@ -227,6 +288,11 @@ async function show() {
     neigh.push(`<div class="${i === idx ? "on" : ""}"><span class="m">${d ? fmtShort(d.p) : "–"}</span><span class="v">${d ? fmtRate(d.v) + " %" : "–"}</span></div>`);
   }
 
+  cur = { v: obs.v, label, sud, p: obs.p, prelim: obs.prelim };
+  if (!armManual) armIn.value = fmtRate(obs.v);
+  syncPeriod();
+  calc();
+
   const citation = `Effektivzinssatz laut MFI-Zinsstatistik der Deutschen Bundesbank, Neugeschäft, ${label} (Zeitreihe ${sud}, BBIM1.M.DE.B.${key}), Berichtsmonat ${fmtMonth(obs.p)}: ${fmtRate(obs.v)} % p.a.${obs.prelim ? " (vorläufig)" : ""}`;
 
   out.innerHTML = `
@@ -290,6 +356,105 @@ function niceStep(raw) {
   const p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / p;
   return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
 }
+
+// ---------- vGA calculator ----------
+let cur = null, armManual = false, periodManual = false;
+const $ = id => document.getElementById(id);
+const amountIn = $("amount"), agreedIn = $("agreed"), armIn = $("arm"), fromIn = $("from"), toIn = $("to");
+const calcOut = $("calc-out"), armHint = $("arm-hint");
+const eur = v => v.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+const parseDe = s => { s = String(s).trim().replace(/\s|€|%/g, ""); if (!s) return NaN;
+  // "1.5" ohne Komma als Dezimalpunkt lesen, "250.000" als Tausenderpunkt
+  if (!s.includes(",") && /^\d+\.\d+$/.test(s) && !/^\d{1,3}(\.\d{3})+$/.test(s)) return parseFloat(s);
+  s = s.replace(/\./g, "").replace(",", "."); return /^-?\d*\.?\d+$/.test(s) ? parseFloat(s) : NaN; };
+const iso = d => d.toISOString().slice(0, 10);
+
+function syncPeriod() {
+  if (periodManual || !dateIn.value) return;
+  const f = new Date(dateIn.value + "T00:00:00Z");
+  const t = new Date(f); t.setUTCFullYear(t.getUTCFullYear() + 1); t.setUTCDate(t.getUTCDate() - 1);
+  fromIn.value = iso(f); toIn.value = iso(t);
+}
+
+function updateArmHint() {
+  if (armManual && cur) {
+    armHint.innerHTML = `von Hand angepasst · Bundesbank: ${fmtRate(cur.v)} % <button type="button" id="arm-reset">zurücksetzen</button>`;
+    $("arm-reset").addEventListener("click", () => { armManual = false; armIn.value = fmtRate(cur.v); updateArmHint(); calc(); });
+  } else if (cur) {
+    armHint.textContent = `Bundesbank, ${fmtShort(cur.p)}, ${cur.sud}${cur.prelim ? " (vorläufig)" : ""}`;
+  } else {
+    armHint.textContent = "aus der Bundesbank-Statistik übernommen";
+  }
+}
+
+function calc() {
+  updateArmHint();
+  const amount = parseDe(amountIn.value), agreed = parseDe(agreedIn.value), arm = parseDe(armIn.value);
+  const dir = document.querySelector('input[name="dir"]:checked').value;
+  const f = fromIn.value ? new Date(fromIn.value + "T00:00:00Z") : null, t = toIn.value ? new Date(toIn.value + "T00:00:00Z") : null;
+  const days = f && t ? Math.round((t - f) / 864e5) + 1 : NaN;
+  $("days").textContent = days > 0 ? `${days.toLocaleString("de-DE")} Zinstage` : "";
+
+  const problems = [];
+  if (!(amount > 0)) problems.push("eine Darlehenssumme größer als 0");
+  if (!(agreed >= 0)) problems.push("den vereinbarten Zinssatz");
+  if (!(arm >= 0)) problems.push("den fremdüblichen Zinssatz");
+  if (!(days > 0)) problems.push("einen Zeitraum, dessen Ende nach dem Beginn liegt");
+  if (problems.length) { calcOut.innerHTML = `<p class="error">Bitte ${problems.join(", ")} angeben.</p>`; return; }
+
+  const factor = amount * days / 365 / 100;
+  const zArm = Math.round(arm * factor * 100) / 100, zAgreed = Math.round(agreed * factor * 100) / 100;
+  const diff = Math.round((zArm - zAgreed) * 100) / 100; // >0: vereinbart weniger als fremdüblich
+  const vga = dir === "out" ? Math.max(0, diff) : Math.max(0, -diff);
+  const fromTxt = fmtDate(fromIn.value), toTxt = fmtDate(toIn.value);
+
+  let verdict;
+  if (vga > 0) {
+    verdict = `<div class="verdict bad"><strong>Mögliche verdeckte Gewinnausschüttung: ${eur(vga)}</strong>
+      <span>${dir === "out"
+        ? "Die Gesellschaft erhält weniger Zinsen, als ein fremder Dritter verlangt hätte. Die entgangenen Zinsen kommen als vGA in Betracht (§ 8 Abs. 3 S. 2 KStG, R 8.5 KStR)."
+        : "Die Gesellschaft zahlt mehr Zinsen, als sie einem fremden Dritten zahlen müsste. Der überhöhte Teil der Zinsen kommt als vGA in Betracht (§ 8 Abs. 3 S. 2 KStG, R 8.5 KStR)."}</span></div>`;
+  } else {
+    verdict = `<div class="verdict ok"><strong>Aus der Zinshöhe ergibt sich keine vGA</strong>
+      <span>${dir === "out"
+        ? "Der vereinbarte Zinssatz liegt auf oder über dem fremdüblichen Satz."
+        : "Der vereinbarte Zinssatz liegt auf oder unter dem fremdüblichen Satz."}</span></div>`;
+  }
+
+  calcOut.innerHTML = `
+    <table class="calc-table">
+      <tr><td>Zinsen zum fremdüblichen Satz</td><td>${fmtRate(arm)} %</td><td>${eur(zArm)}</td></tr>
+      <tr><td>Tatsächlich vereinbarte Zinsen</td><td>${fmtRate(agreed)} %</td><td>${eur(zAgreed)}</td></tr>
+      <tr class="total"><td>Differenz (fremdüblich − vereinbart)</td><td>${diff >= 0 ? "" : "−"}${fmtRate(Math.abs(arm - agreed))} %-Pkt.</td><td>${eur(diff)}</td></tr>
+    </table>
+    ${verdict}
+    <div class="cite-row"><button type="button" class="ghost" id="copy-calc">Berechnung kopieren</button></div>`;
+
+  const summary = [
+    `Fremdvergleich Darlehenszins (§ 8 Abs. 3 S. 2 KStG, R 8.5 KStR)`,
+    `Darlehen: ${dir === "out" ? "Gesellschaft an Gesellschafter" : "Gesellschafter an Gesellschaft"}`,
+    `Darlehenssumme: ${eur(amount)}`,
+    `Zeitraum: ${fromTxt} bis ${toTxt} (${days} Tage, Tage/365)`,
+    `Fremdüblicher Zinssatz: ${fmtRate(arm)} % p.a.` + (cur && !armManual ? ` (Deutsche Bundesbank, MFI-Zinsstatistik, ${cur.label}, ${cur.sud}, ${fmtMonth(cur.p)}${cur.prelim ? ", vorläufig" : ""})` : cur ? ` (von Hand angepasst; Bundesbank ${cur.sud}, ${fmtMonth(cur.p)}: ${fmtRate(cur.v)} %)` : ""),
+    `Vereinbarter Zinssatz: ${fmtRate(agreed)} % p.a.`,
+    `Zinsen zum fremdüblichen Satz: ${eur(zArm)}`,
+    `Vereinbarte Zinsen: ${eur(zAgreed)}`,
+    `Differenz: ${eur(diff)}`,
+    `Mögliche vGA: ${eur(vga)}`,
+  ].join("\n");
+  $("copy-calc").addEventListener("click", e => {
+    const btn = e.currentTarget;
+    navigator.clipboard.writeText(summary).then(() => { btn.textContent = "Kopiert"; setTimeout(() => btn.textContent = "Berechnung kopieren", 1600); })
+      .catch(() => { btn.textContent = "Kopieren nicht möglich"; });
+  });
+}
+
+[amountIn, agreedIn].forEach(el => el.addEventListener("input", calc));
+armIn.addEventListener("input", () => { armManual = true; calc(); });
+[fromIn, toIn].forEach(el => el.addEventListener("change", () => { periodManual = true; calc(); }));
+document.querySelectorAll('input[name="dir"]').forEach(el => el.addEventListener("change", calc));
+amountIn.addEventListener("blur", () => { const v = parseDe(amountIn.value); if (v > 0) amountIn.value = v.toLocaleString("de-DE", { maximumFractionDigits: 2 }); });
+syncPeriod();
 
 document.getElementById("f").addEventListener("submit", e => { e.preventDefault(); show(); });
 typeSel.addEventListener("change", show);
